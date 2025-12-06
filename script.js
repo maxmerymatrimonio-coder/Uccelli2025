@@ -1736,81 +1736,22 @@ document.addEventListener("DOMContentLoaded", function() {
 });
 
 // ===============================================
-// INVIO MODULO VIA NETLIFY FUNCTION → JOTFORM (Uccelli – Form 253380853793063)
+// INVIO MODULO VIA NETLIFY FUNCTION → JOTFORM (Pacchetto B)
 // ===============================================
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("butterfly-form");
   const fileInput = document.getElementById("butterflyImage");
   const submitBtn = document.getElementById("submitButton");
 
-  if (!form) return;
-
-  function readFileAsDataURL(file) {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("Impossibile leggere il file selezionato."));
-      reader.readAsDataURL(file);
-    });
-  }
-
-  function buildSpeciesArray() {
-    const container = document.getElementById("speciesFieldsContainer");
-    if (!container) return [];
-    const boxes = container.querySelectorAll(".species-box");
-    const out = [];
-    boxes.forEach((box, index) => {
-      const nome = (box.querySelector('input[name="q110_nomeSpecie"]')?.value || "").trim();
-      const numero = box.querySelector('select[name="q23_numeroIndividui"]')?.value || "";
-      const sesso = box.querySelector('select[name="q360_sessoSpecie"]')?.value || "";
-      const cavitaRadio = box.querySelector('input[name="cavita[]"]:checked');
-      const cavita = cavitaRadio ? cavitaRadio.value : "";
-      const atlanteStr = box.querySelector(".codici-atlante-value")?.value || "";
-      const atlante = atlanteStr
-        .split(",")
-        .map(s => s.trim())
-        .filter(Boolean);
-      const note = box.querySelector(".codici-atlante-note-value")?.value || "";
-      const numeroCavita = box.querySelector("#numeroCavita")?.value || "";
-      const numeroCivico = box.querySelector("#numeroCivico")?.value || "";
-
-      if (nome || numero || atlante.length || note) {
-        out.push({
-          index: index + 1,
-          nomeSpecie: nome,
-          numeroSpecie: numero,
-          sessoSpecie: sesso,
-          cavita,
-          atlanteUccelli: atlante,
-          note,
-          numeroCavita,
-          numeroCivico
-        });
-      }
-    });
-    return out;
-  }
-
-  function estraiNumeroCavitaGlobale(species) {
-    for (const s of species) {
-      if (s.cavita === "Si" && s.numeroCavita) return s.numeroCavita;
-    }
-    return "";
-  }
-
-  function estraiNumeroCivicoGlobale(species) {
-    for (const s of species) {
-      if (s.cavita === "Si" && s.numeroCivico) return s.numeroCivico;
-    }
-    return "";
-  }
+  if (!form || !fileInput) return;
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const consensoChecked = form.querySelector('input[name="q266_ilSottoscritto"]:checked');
-    if (!consensoChecked || consensoChecked.value !== "Acconsento") {
-      alert("Per inviare il modulo devi selezionare 'Acconsento'.");
+    // Controlli base
+    if (!fileInput.files || fileInput.files.length === 0) {
+      alert("Carica almeno una foto, video o audio prima di inviare.");
       return;
     }
 
@@ -1820,8 +1761,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    if (!fileInput || !fileInput.files || !fileInput.files.length) {
-      alert("Carica almeno una foto / un file prima di inviare.");
+    const consensoChecked = form.querySelector('input[name="q266_ilSottoscritto"]:checked');
+    if (!consensoChecked || consensoChecked.value !== "Acconsento") {
+      alert("Per inviare il modulo devi selezionare 'Acconsento'.");
       return;
     }
 
@@ -1831,48 +1773,109 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const nomeCompleto = document.getElementById("nomeRilevatore")?.value || "";
-      const partiNome = nomeCompleto.trim().split(/\\s+/);
-      const nome = partiNome.shift() || "";
-      const cognome = partiNome.join(" ");
+      // Nome + cognome da campo unico
+      const fullNameValue = document.getElementById("nomeRilevatore")?.value?.trim() || "";
+      let nome = "";
+      let cognome = "";
+      if (fullNameValue) {
+        const parts = fullNameValue.split(/\s+/);
+        nome = parts.shift() || "";
+        cognome = parts.join(" ");
+      }
 
       const ente = document.getElementById("enteTitolo")?.value || "";
+      const email = emailInput.value;
       const dataavvistamento = document.getElementById("dataAvvistamento")?.value || "";
+      const ulterioriosservazioni = document.getElementById("ulterioriOsservazioni")?.value || "";
 
-      const ambientecircostante = Array.from(
+      // Ambiente circostante (checkbox multipla)
+      const ambienteChecks = Array.from(
         document.querySelectorAll('input[name="q25_ambienteCircostante[]"]:checked')
-      ).map(cb => cb.value);
+      );
+      const ambientecircostante = ambienteChecks.map((c) => c.value);
 
-      const ulterioriosservazioni =
-        document.getElementById("ulterioriOsservazioni")?.value || "";
-
+      // Coordinate / mappa
       const lat = document.getElementById("latitudine")?.value || "";
       const lng = document.getElementById("longitudine")?.value || "";
-      const mappa = lat && lng ? `${lat}, ${lng}` : "";
+      const geoHidden = document.getElementById("jotformGeoloc")?.value || "";
+      const mappa = lat && lng ? `${lat}, ${lng}` : geoHidden;
 
-      const speciesArray = buildSpeciesArray();
-      const numeroCavitaAvvistate = estraiNumeroCavitaGlobale(speciesArray);
-      const numeroCivico = estraiNumeroCivicoGlobale(speciesArray);
+      // Costruzione speciesArray + numero cavità / numero civico
+      function buildSpeciesArray() {
+        const speciesContainer = document.getElementById("speciesFieldsContainer");
+        if (!speciesContainer) return { speciesArray: [], numeroCavitaAvvistate: "", numeroCivico: "" };
 
-      // Informazioni sul primo file (opzionale) da mettere nel JSON
-      let fileInfo = null;
-      const firstFile = fileInput.files[0];
-      if (firstFile) {
-        const dataUrl = await readFileAsDataURL(firstFile);
-        const base64 = dataUrl.split(",")[1] || "";
-        fileInfo = {
-          name: firstFile.name,
-          type: firstFile.type || "application/octet-stream",
-          size: firstFile.size,
-          base64
-        };
+        const boxes = speciesContainer.querySelectorAll(".species-box");
+        const speciesArray = [];
+        let numeroCavitaAvvistate = "";
+        let numeroCivico = "";
+
+        boxes.forEach((box) => {
+          const nomeInput = box.querySelector('input[name="q110_nomeSpecie"]');
+          const numSelect = box.querySelector('select[name="q23_numeroIndividui"]');
+          const sessoSelect = box.querySelector('select[name="q360_sessoSpecie"]');
+          const codiciHidden = box.querySelector(".codici-atlante-value");
+          const noteHidden = box.querySelector(".codici-atlante-note-value");
+
+          const nomeSpecie = nomeInput?.value?.trim() || "";
+          const numeroSpecie = numSelect?.value || "";
+          const sessoSpecie = sessoSelect?.value || "";
+
+          const atlanteUccelli = (codiciHidden?.value || "")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+          const note = noteHidden?.value || "";
+
+          // cavità per rondoni
+          const cavitaRadios = box.querySelectorAll('input[name="cavita[]"]');
+          let cavitaVal = "";
+          cavitaRadios.forEach((r) => {
+            if (r.checked) cavitaVal = r.value;
+          });
+
+          const cavitaNumInput =
+            box.querySelector("#numeroCavita") || box.querySelector('input[name="numeroCavita"]');
+          const civicoInput =
+            box.querySelector("#numeroCivico") || box.querySelector('input[name="numeroCivico"]');
+
+          if (!numeroCavitaAvvistate && cavitaVal === "Si" && cavitaNumInput?.value) {
+            numeroCavitaAvvistate = cavitaNumInput.value.trim();
+          }
+          if (!numeroCivico && cavitaVal === "Si" && civicoInput?.value) {
+            numeroCivico = civicoInput.value.trim();
+          }
+
+          if (
+            nomeSpecie ||
+            numeroSpecie ||
+            sessoSpecie ||
+            atlanteUccelli.length ||
+            note ||
+            cavitaVal
+          ) {
+            speciesArray.push({
+              nomeSpecie,
+              numeroSpecie,
+              sessoSpecie,
+              atlanteUccelli,
+              cavita: cavitaVal,
+              note,
+            });
+          }
+        });
+
+        return { speciesArray, numeroCavitaAvvistate, numeroCivico };
       }
+
+      const { speciesArray, numeroCavitaAvvistate, numeroCivico } = buildSpeciesArray();
 
       const payload = {
         nome,
         cognome,
         ente,
-        email: emailInput.value,
+        email,
         dataavvistamento,
         ambientecircostante,
         ulterioriosservazioni,
@@ -1881,19 +1884,18 @@ document.addEventListener("DOMContentLoaded", () => {
         numeroCavitaAvvistate,
         numeroCivico,
         speciesArray,
-        fileInfo
+        fileUrl: ""
       };
 
       const res = await fetch("/.netlify/functions/submit-jotform", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       const text = await res.text();
 
       if (res.ok) {
-        console.log("Risposta Netlify/Jotform:", text);
         alert("Dati inviati correttamente a Jotform.");
         form.reset();
 
@@ -1902,17 +1904,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (previewBox) previewBox.style.display = "none";
         if (previewContainer) previewContainer.innerHTML = "";
 
+        const birdnetBox = document.getElementById("birdnetBox");
+        if (birdnetBox) birdnetBox.style.display = "none";
+
         const rect = form.getBoundingClientRect();
         const scrollTop =
-          window.scrollY ||
-          window.pageYOffset ||
-          document.documentElement.scrollTop ||
-          0;
+          window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
         const targetY = rect.top + scrollTop;
         window.scrollTo({ top: targetY, behavior: "smooth" });
       } else {
-        console.error("Errore Netlify/Jotform:", text);
-        alert("Errore nell'invio a Jotform:\\n" + text);
+        console.error("Errore Jotform / Netlify:", text);
+        alert("Errore nell'invio a Jotform:\n" + text);
       }
     } catch (err) {
       console.error("Errore invio Netlify function:", err);
@@ -1925,6 +1927,128 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+
+function removeSpecies(btn) {
+  const box = btn.closest('.species-box');
+  const container = document.getElementById('speciesFieldsContainer');
+  if (!box) return;
+  const boxes = container.querySelectorAll('.species-box');
+  if (boxes.length <= 1) return;
+  box.remove();
+  let index = 1;
+  container.querySelectorAll('.species-box').forEach(b => {
+    b.dataset.index = index;
+    const title = b.querySelector('.species-title');
+    if (title) title.textContent = "Specie " + index;
+    index++;
+  });
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('butterflyImage');
+  const birdnetBox = document.getElementById('birdnetBox');
+  if (!fileInput || !birdnetBox) return;
+  fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files || []);
+    const hasAudio = files.some(file =>
+      file.type.startsWith('audio') ||
+      /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name)
+    );
+    birdnetBox.style.display = hasAudio ? 'block' : 'none';
+  });
+});
+
+
+// === AUTOCOMPILAZIONE DA EXIF PER DATA + GPS ===
+function dmsToDecimal(dmsArray, ref) {
+  if (!Array.isArray(dmsArray) || dmsArray.length < 3) return null;
+  const [deg, min, sec] = dmsArray;
+  let dec = deg + min/60 + sec/3600;
+  if (ref === 'S' || ref === 'W') dec = -dec;
+  return dec;
+}
+async function autofillFromExif(file) {
+  if (!file) return;
+  const isImageType = file.type && file.type.startsWith('image/');
+  const isHeicByName = /\.(heic|heif)$/i.test(file.name || '');
+  if (!isImageType && !isHeicByName) return;
+  try {
+    const exif = await exifr.parse(file, { gps: true });
+    if (!exif) return;
+    const dateField = document.getElementById('dataAvvistamento');
+    if (dateField && !dateField.value) {
+      const exifDate =
+        exif.DateTimeOriginal ||
+        exif.CreateDate ||
+        exif.ModifyDate ||
+        exif.DateCreated;
+      if (exifDate instanceof Date) {
+        const yyyy = exifDate.getFullYear();
+        const mm = String(exifDate.getMonth()+1).padStart(2,'0');
+        const dd = String(exifDate.getDate()).padStart(2,'0');
+        dateField.value = `${yyyy}-${mm}-${dd}`;
+      }
+    }
+    let lat = exif.latitude ?? exif.GPSLatitude;
+    let lng = exif.longitude ?? exif.GPSLongitude;
+    if (Array.isArray(lat)) lat = dmsToDecimal(lat, exif.GPSLatitudeRef);
+    if (Array.isArray(lng)) lng = dmsToDecimal(lng, exif.GPSLongitudeRef);
+    if (typeof lat === 'number' && typeof lng === 'number') {
+      const latInput = document.getElementById('latitudine');
+      const lngInput = document.getElementById('longitudine');
+      if (latInput && lngInput) {
+        latInput.value = lat.toString();
+        lngInput.value = lng.toString();
+      }
+      if (window.google && window.google.maps &&
+          window.map instanceof google.maps.Map &&
+          window.marker instanceof google.maps.Marker) {
+        const pos = { lat, lng };
+        window.marker.setPosition(pos);
+        window.map.setCenter(pos);
+        window.map.setZoom(16);
+      }
+    }
+  } catch (err) { console.error('Errore EXIF:', err); }
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('butterflyImage');
+  if (!fileInput) return;
+  fileInput.addEventListener('change', (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+    const firstImage =
+      files.find(f => f.type.startsWith('image/')) ||
+      files.find(f => /\.(jpe?g|png|heic|heif)$/i.test(f.name || ''));
+    if (firstImage) autofillFromExif(firstImage);
+  });
+});
+
+// TODO: apply Codici selezionati bolding update
+
+// Aggiungi l'ascoltatore per la cancellazione dell'anteprima
+document.querySelectorAll('.thumbnail-delete').forEach(button => {
+    button.addEventListener('click', (event) => {
+        removeFilePreview(event.target);
+    });
+});
+
+// Funzione per cancellare l'anteprima del file
+function removeFilePreview(fileElement) {
+    const previewContainer = document.getElementById('previewContainer');
+    previewContainer.removeChild(fileElement.parentElement);  // Rimuove l'elemento di anteprima
+
+    // Ripristina i campi data e GPS
+    document.getElementById('dataAvvistamento').value = '';  // Svuota il campo data
+    document.getElementById('latitudine').value = '';  // Svuota il campo latitudine
+    document.getElementById('longitudine').value = '';  // Svuota il campo longitudine
+
+    // Nasconde l'avviso EXIF, se visibile
+    document.getElementById('exifWarningBox').style.display = 'none';
+}
 
 // ===== MOSTRARE "Hai avvistato cavità?" PER RONDONI =====
 document.addEventListener('DOMContentLoaded', function () {
