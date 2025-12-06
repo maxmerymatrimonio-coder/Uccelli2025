@@ -1304,6 +1304,10 @@ if (imageInputA2) {
     const firstFile = files[0];
 
     // Lettura EXIF solo sul primo file (data + GPS)
+    // --- LETTURA EXIF SOLO SUL PRIMO FILE (DATA + GPS) ---
+    // prima cosa: nascondo sempre l’avviso, lo mostrerò solo se davvero mancano i dati
+    hideExifWarning();
+
     if (firstFile && firstFile.type) {
       const fileName = (firstFile.name || "").toLowerCase();
       const fileType = (firstFile.type || "").toLowerCase();
@@ -1322,17 +1326,32 @@ if (imageInputA2) {
             let dateFound = false;
             let gpsFound = false;
 
-            // Data di avvistamento da EXIF
-            if (meta.DateTimeOriginal instanceof Date && dataAvvistamentoA2) {
-              const d = meta.DateTimeOriginal;
-              const yyyy = d.getFullYear();
-              const mm = String(d.getMonth() + 1).padStart(2, "0");
-              const dd = String(d.getDate()).padStart(2, "0");
-              dataAvvistamentoA2.value = `${yyyy}-${mm}-${dd}`;
-              dateFound = true;
+            // --- DATA DI AVVISTAMENTO DA EXIF (con più campi di fallback) ---
+            if (dataAvvistamentoA2) {
+              // se è già compilata (es. da un invio precedente o manualmente) la considero valida
+              if (dataAvvistamentoA2.value) {
+                dateFound = true;
+              }
+
+              // altrimenti provo a leggerla dai vari campi EXIF
+              if (!dateFound) {
+                let exifDate =
+                  meta.DateTimeOriginal ||
+                  meta.CreateDate ||
+                  meta.ModifyDate ||
+                  meta.DateCreated;
+
+                if (exifDate instanceof Date) {
+                  const yyyy = exifDate.getFullYear();
+                  const mm = String(exifDate.getMonth() + 1).padStart(2, "0");
+                  const dd = String(exifDate.getDate()).padStart(2, "0");
+                  dataAvvistamentoA2.value = `${yyyy}-${mm}-${dd}`;
+                  dateFound = true;
+                }
+              }
             }
 
-            // Coordinate GPS da EXIF
+            // --- COORDINATE GPS DA EXIF ---
             if (typeof meta.latitude === "number" && typeof meta.longitude === "number") {
               const lat = meta.latitude;
               const lng = meta.longitude;
@@ -1357,8 +1376,11 @@ if (imageInputA2) {
               gpsFound = true;
             }
 
-            // Se non abbiamo trovato data o GPS, avvisa l'utente
-            if (!dateFound || !gpsFound) {
+            // --- DECISIONE AVVISO ---
+            // Mostra l’avviso SOLO se manca almeno uno dei due dati
+            if (dateFound && gpsFound) {
+              hideExifWarning();
+            } else {
               showExifWarning();
             }
           })
@@ -1367,12 +1389,12 @@ if (imageInputA2) {
             showExifWarning();
           });
       } else {
-        // Non è un formato immagine supportato, è HEIC/HEIF oppure la libreria EXIF non è disponibile
+        // non è un’immagine supportata → avviso perché non possiamo leggere EXIF
         showExifWarning();
       }
     }
 
-    // Popola l'array con massimo 5 immagini, convertendo HEIC/HEIF se necessario
+// Popola l'array con massimo 5 immagini, convertendo HEIC/HEIF se necessario
     for (const file of files) {
       if (selectedImagesA2.length >= 5) break;
       const fileToUse = await convertFile(file);
