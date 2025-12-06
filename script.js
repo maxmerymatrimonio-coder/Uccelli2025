@@ -1301,18 +1301,21 @@ if (imageInputA2) {
 
     if (previewBoxA2) previewBoxA2.style.display = "block";
 
+
     const firstFile = files[0];
 
-    // Lettura EXIF solo sul primo file (data + GPS)
     // --- LETTURA EXIF SOLO SUL PRIMO FILE (DATA + GPS) ---
-    // prima cosa: nascondo sempre l’avviso, lo mostrerò solo se davvero mancano i dati
+    // prima cosa: nascondo sempre l'avviso, lo mostrerò solo se davvero mancano i dati
     hideExifWarning();
 
     if (firstFile && firstFile.type) {
       const fileName = (firstFile.name || "").toLowerCase();
       const fileType = (firstFile.type || "").toLowerCase();
       const isImage = fileType.startsWith("image/");
-      const isHeic = fileType.includes("heic") || fileName.endsWith(".heic") || fileName.endsWith(".heif");
+      const isHeic =
+        fileType.includes("heic") ||
+        fileName.endsWith(".heic") ||
+        fileName.endsWith(".heif");
 
       if (isImage && typeof exifr !== "undefined" && !isHeic) {
         exifr
@@ -1377,7 +1380,7 @@ if (imageInputA2) {
             }
 
             // --- DECISIONE AVVISO ---
-            // Mostra l’avviso SOLO se manca almeno uno dei due dati
+            // Mostra l'avviso SOLO se manca almeno uno dei due dati
             if (dateFound && gpsFound) {
               hideExifWarning();
             } else {
@@ -1389,10 +1392,11 @@ if (imageInputA2) {
             showExifWarning();
           });
       } else {
-        // non è un’immagine supportata → avviso perché non possiamo leggere EXIF
+        // non è un'immagine supportata oppure la libreria EXIF non è disponibile
         showExifWarning();
       }
     }
+
 
 // Popola l'array con massimo 5 immagini, convertendo HEIC/HEIF se necessario
     for (const file of files) {
@@ -1757,9 +1761,8 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
-
 // ===============================================
-// INVIO MODULO VIA NETLIFY FUNCTION → JOTFORM (Versione 10 specie)
+// INVIO MODULO VIA NETLIFY FUNCTION → JOTFORM (Pacchetto B)
 // ===============================================
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("butterfly-form");
@@ -1781,8 +1784,8 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
 
     // Controlli base
-    if (!fileInput.files || !fileInput.files.length) {
-      alert("Carica almeno un file (foto / video / audio) prima di inviare.");
+    if (!fileInput.files || fileInput.files.length === 0) {
+      alert("Carica almeno una foto prima di inviare.");
       return;
     }
 
@@ -1806,84 +1809,42 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const firstFile = fileInput.files[0];
       const dataUrl = await readFileAsDataURL(firstFile);
-      const base64 = (dataUrl || "").toString().split(",")[1] || "";
-
-      // Costruzione array specie (max 10 specie)
-      const speciesArray = [];
-      const container = document.getElementById("speciesFieldsContainer");
-      if (container) {
-        const boxes = container.querySelectorAll(".species-box");
-        boxes.forEach((box, idx) => {
-          if (idx >= 10) return; // limite a 10 specie
-
-          const nomeEl = box.querySelector('input[name="q110_nomeSpecie"]');
-          const numEl = box.querySelector('select[name="q23_numeroIndividui"]');
-          const sessoEl = box.querySelector('select[name="q360_sessoSpecie"]');
-          const atlHidden = box.querySelector(".codici-atlante-value");
-          const atlNoteHidden = box.querySelector(".codici-atlante-note-value");
-          const cavitaRadio = box.querySelector('input[name="cavita[]"]:checked');
-          const numCavEl = box.querySelector("#numeroCavita");
-          const civicoEl = box.querySelector("#numeroCivico");
-
-          const nomeSpecie = nomeEl ? nomeEl.value.trim() : "";
-          const numeroSpecie = numEl ? numEl.value : "";
-          const sessoSpecie = sessoEl ? sessoEl.value : "";
-
-          // se per questa riga non è stato inserito nulla, la saltiamo
-          const hasSomething =
-            nomeSpecie ||
-            numeroSpecie ||
-            sessoSpecie ||
-            (atlHidden && atlHidden.value) ||
-            (atlNoteHidden && atlNoteHidden.value) ||
-            (cavitaRadio && cavitaRadio.value) ||
-            (numCavEl && numCavEl.value) ||
-            (civicoEl && civicoEl.value);
-
-          if (!hasSomething) return;
-
-          const atlRaw = atlHidden && atlHidden.value ? atlHidden.value : "";
-          const atlanteUccelli = atlRaw
-            ? atlRaw
-                .split(",")
-                .map((s) => s.trim())
-                .filter((s) => s.length > 0)
-            : [];
-
-          const specieObj = {
-            nomeSpecie,
-            numeroSpecie,
-            sessoSpecie,
-            atlanteUccelli,
-            noteAtlante: atlNoteHidden && atlNoteHidden.value ? atlNoteHidden.value.trim() : "",
-            cavita: cavitaRadio ? cavitaRadio.value : "",
-            numeroCavita: numCavEl && numCavEl.value ? numCavEl.value : "",
-            numeroCivico: civicoEl && civicoEl.value ? civicoEl.value.trim() : "",
-          };
-
-          speciesArray.push(specieObj);
-        });
-      }
-
-      // Ambiente circostante (checkbox multipli)
-      const ambienteValues = Array.from(
-        form.querySelectorAll('input[name="q25_ambienteCircostante[]"]:checked')
-      ).map((el) => el.value);
+      const base64 = dataUrl.split(",")[1];
 
       const payload = {
-        formID: "253380853793063",
-        nomeCompleto: document.getElementById("nomeRilevatore")?.value || "",
-        ente: document.getElementById("enteTitolo")?.value || "",
+        formID: "253234849989376",
         email: emailInput.value,
+        tipo: (form.querySelector('input[name="q30_scriviUna[]"]:checked') || {}).value || "",
         dataAvvistamento: document.getElementById("dataAvvistamento")?.value || "",
-        ambienteCircostante: ambienteValues,
+        nome: document.getElementById("nomeRilevatore")?.value || "",
+        ente: document.getElementById("enteTitolo")?.value || "",
+        ambiente: document.getElementById("ambienteCircostante")?.value || "",
+        // Costruisce un riepilogo testuale per tutte le righe specie/numero individui
+        specie: (() => {
+          const container = document.getElementById("speciesFieldsContainer");
+          if (!container) return "";
+          const rows = container.querySelectorAll(".species-row");
+          const lines = [];
+          rows.forEach((row, index) => {
+            const specieSel = row.querySelector('select[name="q110_nomeSpecie"]');
+            const numSel = row.querySelector('select[name="q23_numeroIndividui"]');
+            const specieVal = (specieSel && specieSel.value) ? specieSel.value : "";
+            const numVal = (numSel && numSel.value) ? numSel.value : "";
+            if (specieVal || numVal) {
+              const parts = [];
+              if (specieVal) parts.push(`Specie: ${specieVal}`);
+              if (numVal) parts.push(`Numero individui: ${numVal}`);
+              lines.push(`${index + 1}) ${parts.join(" | ")}`);
+            }
+          });
+          return lines.join("\n");
+        })(),
         ulterioriOsservazioni: document.getElementById("ulterioriOsservazioni")?.value || "",
         consenso: consensoChecked.value,
         geoloc: document.getElementById("jotformGeoloc")?.value || "",
         fileBase64: base64,
         fileName: firstFile.name,
-        fileType: firstFile.type || "application/octet-stream",
-        speciesArray,
+        fileType: firstFile.type || "image/jpeg",
       };
 
       const res = await fetch("/.netlify/functions/submit-jotform", {
@@ -1897,22 +1858,19 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.ok) {
         alert("Dati inviati correttamente a Jotform.");
         form.reset();
-        selectedImagesA2 = [];
-        renderPreviewsA2();
         const previewBox = document.getElementById("imagePreviewBox");
         const previewContainer = document.getElementById("previewContainer");
         if (previewBox) previewBox.style.display = "none";
         if (previewContainer) previewContainer.innerHTML = "";
 
-        // Torna automaticamente all'inizio del modulo
+        // Torna automaticamente all'inizio del modulo farfalle
         const rect = form.getBoundingClientRect();
-        const scrollTop =
-          window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+        const scrollTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
         const targetY = rect.top + scrollTop;
         window.scrollTo({ top: targetY, behavior: "smooth" });
       } else {
         console.error("Errore Jotform:", text);
-        alert("Errore nell'invio a Jotform:\\n" + text);
+        alert("Errore nell'invio a Jotform:\n" + text);
       }
     } catch (err) {
       console.error("Errore invio Netlify function:", err);
@@ -1925,6 +1883,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+function removeSpecies(btn) {
+  const box = btn.closest('.species-box');
+  const container = document.getElementById('speciesFieldsContainer');
+  if (!box) return;
+  const boxes = container.querySelectorAll('.species-box');
+  if (boxes.length <= 1) return;
+  box.remove();
+  let index = 1;
+  container.querySelectorAll('.species-box').forEach(b => {
+    b.dataset.index = index;
+    const title = b.querySelector('.species-title');
+    if (title) title.textContent = "Specie " + index;
+    index++;
+  });
+}
+
+
+document.addEventListener('DOMContentLoaded', () => {
+  const fileInput = document.getElementById('butterflyImage');
+  const birdnetBox = document.getElementById('birdnetBox');
+  if (!fileInput || !birdnetBox) return;
+  fileInput.addEventListener('change', () => {
+    const files = Array.from(fileInput.files || []);
+    const hasAudio = files.some(file =>
+      file.type.startsWith('audio') ||
+      /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name)
+    );
+    birdnetBox.style.display = hasAudio ? 'block' : 'none';
+  });
+});
+
+
 // === AUTOCOMPILAZIONE DA EXIF PER DATA + GPS ===
 function dmsToDecimal(dmsArray, ref) {
   if (!Array.isArray(dmsArray) || dmsArray.length < 3) return null;
