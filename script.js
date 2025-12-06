@@ -1216,23 +1216,6 @@ const AUDIO_ICON_URL = "audio-book.jpg";
 
 function showExifWarning() {
   const box = document.getElementById("exifWarningBox");
-
-  // Se data + coordinate sono già presenti nel form, NON mostrare l'avviso
-  const dateField = document.getElementById("dataAvvistamento");
-  const latField  = document.getElementById("latitudine");
-  const lngField  = document.getElementById("longitudine");
-
-  const hasDate = !!(dateField && dateField.value);
-  const hasLat  = !!(latField && latField.value);
-  const hasLng  = !!(lngField && lngField.value);
-
-  if (hasDate && hasLat && hasLng) {
-    if (box) {
-      box.classList.remove("visible");
-    }
-    return;
-  }
-
   if (box) {
     box.classList.add("visible");
   } else {
@@ -1246,7 +1229,6 @@ function showExifWarning() {
     );
   }
 }
-
 
 function hideExifWarning() {
   const box = document.getElementById("exifWarningBox");
@@ -1319,21 +1301,14 @@ if (imageInputA2) {
 
     if (previewBoxA2) previewBoxA2.style.display = "block";
 
-
     const firstFile = files[0];
 
-    // --- LETTURA EXIF SOLO SUL PRIMO FILE (DATA + GPS) ---
-    // prima cosa: nascondo sempre l'avviso, lo mostrerò solo se davvero mancano i dati
-    hideExifWarning();
-
+    // Lettura EXIF solo sul primo file (data + GPS)
     if (firstFile && firstFile.type) {
       const fileName = (firstFile.name || "").toLowerCase();
       const fileType = (firstFile.type || "").toLowerCase();
       const isImage = fileType.startsWith("image/");
-      const isHeic =
-        fileType.includes("heic") ||
-        fileName.endsWith(".heic") ||
-        fileName.endsWith(".heif");
+      const isHeic = fileType.includes("heic") || fileName.endsWith(".heic") || fileName.endsWith(".heif");
 
       if (isImage && typeof exifr !== "undefined" && !isHeic) {
         exifr
@@ -1347,32 +1322,17 @@ if (imageInputA2) {
             let dateFound = false;
             let gpsFound = false;
 
-            // --- DATA DI AVVISTAMENTO DA EXIF (con più campi di fallback) ---
-            if (dataAvvistamentoA2) {
-              // se è già compilata (es. da un invio precedente o manualmente) la considero valida
-              if (dataAvvistamentoA2.value) {
-                dateFound = true;
-              }
-
-              // altrimenti provo a leggerla dai vari campi EXIF
-              if (!dateFound) {
-                let exifDate =
-                  meta.DateTimeOriginal ||
-                  meta.CreateDate ||
-                  meta.ModifyDate ||
-                  meta.DateCreated;
-
-                if (exifDate instanceof Date) {
-                  const yyyy = exifDate.getFullYear();
-                  const mm = String(exifDate.getMonth() + 1).padStart(2, "0");
-                  const dd = String(exifDate.getDate()).padStart(2, "0");
-                  dataAvvistamentoA2.value = `${yyyy}-${mm}-${dd}`;
-                  dateFound = true;
-                }
-              }
+            // Data di avvistamento da EXIF
+            if (meta.DateTimeOriginal instanceof Date && dataAvvistamentoA2) {
+              const d = meta.DateTimeOriginal;
+              const yyyy = d.getFullYear();
+              const mm = String(d.getMonth() + 1).padStart(2, "0");
+              const dd = String(d.getDate()).padStart(2, "0");
+              dataAvvistamentoA2.value = `${yyyy}-${mm}-${dd}`;
+              dateFound = true;
             }
 
-            // --- COORDINATE GPS DA EXIF ---
+            // Coordinate GPS da EXIF
             if (typeof meta.latitude === "number" && typeof meta.longitude === "number") {
               const lat = meta.latitude;
               const lng = meta.longitude;
@@ -1397,11 +1357,8 @@ if (imageInputA2) {
               gpsFound = true;
             }
 
-            // --- DECISIONE AVVISO ---
-            // Mostra l'avviso SOLO se manca almeno uno dei due dati
-            if (dateFound && gpsFound) {
-              hideExifWarning();
-            } else {
+            // Se non abbiamo trovato data o GPS, avvisa l'utente
+            if (!dateFound || !gpsFound) {
               showExifWarning();
             }
           })
@@ -1410,13 +1367,12 @@ if (imageInputA2) {
             showExifWarning();
           });
       } else {
-        // non è un'immagine supportata oppure la libreria EXIF non è disponibile
+        // Non è un formato immagine supportato, è HEIC/HEIF oppure la libreria EXIF non è disponibile
         showExifWarning();
       }
     }
 
-
-// Popola l'array con massimo 5 immagini, convertendo HEIC/HEIF se necessario
+    // Popola l'array con massimo 5 immagini, convertendo HEIC/HEIF se necessario
     for (const file of files) {
       if (selectedImagesA2.length >= 5) break;
       const fileToUse = await convertFile(file);
@@ -1779,8 +1735,9 @@ document.addEventListener("DOMContentLoaded", function() {
   }
 });
 
+
 // ===============================================
-// INVIO MODULO VIA NETLIFY FUNCTION → JOTFORM (Pacchetto B)
+// INVIO MODULO VIA NETLIFY FUNCTION → JOTFORM (Versione 10 specie)
 // ===============================================
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("butterfly-form");
@@ -1802,8 +1759,8 @@ document.addEventListener("DOMContentLoaded", () => {
     e.preventDefault();
 
     // Controlli base
-    if (!fileInput.files || fileInput.files.length === 0) {
-      alert("Carica almeno una foto prima di inviare.");
+    if (!fileInput.files || !fileInput.files.length) {
+      alert("Carica almeno un file (foto / video / audio) prima di inviare.");
       return;
     }
 
@@ -1827,42 +1784,84 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const firstFile = fileInput.files[0];
       const dataUrl = await readFileAsDataURL(firstFile);
-      const base64 = dataUrl.split(",")[1];
+      const base64 = (dataUrl || "").toString().split(",")[1] || "";
+
+      // Costruzione array specie (max 10 specie)
+      const speciesArray = [];
+      const container = document.getElementById("speciesFieldsContainer");
+      if (container) {
+        const boxes = container.querySelectorAll(".species-box");
+        boxes.forEach((box, idx) => {
+          if (idx >= 10) return; // limite a 10 specie
+
+          const nomeEl = box.querySelector('input[name="q110_nomeSpecie"]');
+          const numEl = box.querySelector('select[name="q23_numeroIndividui"]');
+          const sessoEl = box.querySelector('select[name="q360_sessoSpecie"]');
+          const atlHidden = box.querySelector(".codici-atlante-value");
+          const atlNoteHidden = box.querySelector(".codici-atlante-note-value");
+          const cavitaRadio = box.querySelector('input[name="cavita[]"]:checked');
+          const numCavEl = box.querySelector("#numeroCavita");
+          const civicoEl = box.querySelector("#numeroCivico");
+
+          const nomeSpecie = nomeEl ? nomeEl.value.trim() : "";
+          const numeroSpecie = numEl ? numEl.value : "";
+          const sessoSpecie = sessoEl ? sessoEl.value : "";
+
+          // se per questa riga non è stato inserito nulla, la saltiamo
+          const hasSomething =
+            nomeSpecie ||
+            numeroSpecie ||
+            sessoSpecie ||
+            (atlHidden && atlHidden.value) ||
+            (atlNoteHidden && atlNoteHidden.value) ||
+            (cavitaRadio && cavitaRadio.value) ||
+            (numCavEl && numCavEl.value) ||
+            (civicoEl && civicoEl.value);
+
+          if (!hasSomething) return;
+
+          const atlRaw = atlHidden && atlHidden.value ? atlHidden.value : "";
+          const atlanteUccelli = atlRaw
+            ? atlRaw
+                .split(",")
+                .map((s) => s.trim())
+                .filter((s) => s.length > 0)
+            : [];
+
+          const specieObj = {
+            nomeSpecie,
+            numeroSpecie,
+            sessoSpecie,
+            atlanteUccelli,
+            noteAtlante: atlNoteHidden && atlNoteHidden.value ? atlNoteHidden.value.trim() : "",
+            cavita: cavitaRadio ? cavitaRadio.value : "",
+            numeroCavita: numCavEl && numCavEl.value ? numCavEl.value : "",
+            numeroCivico: civicoEl && civicoEl.value ? civicoEl.value.trim() : "",
+          };
+
+          speciesArray.push(specieObj);
+        });
+      }
+
+      // Ambiente circostante (checkbox multipli)
+      const ambienteValues = Array.from(
+        form.querySelectorAll('input[name="q25_ambienteCircostante[]"]:checked')
+      ).map((el) => el.value);
 
       const payload = {
-        formID: "253234849989376",
-        email: emailInput.value,
-        tipo: (form.querySelector('input[name="q30_scriviUna[]"]:checked') || {}).value || "",
-        dataAvvistamento: document.getElementById("dataAvvistamento")?.value || "",
-        nome: document.getElementById("nomeRilevatore")?.value || "",
+        formID: "253380853793063",
+        nomeCompleto: document.getElementById("nomeRilevatore")?.value || "",
         ente: document.getElementById("enteTitolo")?.value || "",
-        ambiente: document.getElementById("ambienteCircostante")?.value || "",
-        // Costruisce un riepilogo testuale per tutte le righe specie/numero individui
-        specie: (() => {
-          const container = document.getElementById("speciesFieldsContainer");
-          if (!container) return "";
-          const rows = container.querySelectorAll(".species-row");
-          const lines = [];
-          rows.forEach((row, index) => {
-            const specieSel = row.querySelector('select[name="q110_nomeSpecie"]');
-            const numSel = row.querySelector('select[name="q23_numeroIndividui"]');
-            const specieVal = (specieSel && specieSel.value) ? specieSel.value : "";
-            const numVal = (numSel && numSel.value) ? numSel.value : "";
-            if (specieVal || numVal) {
-              const parts = [];
-              if (specieVal) parts.push(`Specie: ${specieVal}`);
-              if (numVal) parts.push(`Numero individui: ${numVal}`);
-              lines.push(`${index + 1}) ${parts.join(" | ")}`);
-            }
-          });
-          return lines.join("\n");
-        })(),
+        email: emailInput.value,
+        dataAvvistamento: document.getElementById("dataAvvistamento")?.value || "",
+        ambienteCircostante: ambienteValues,
         ulterioriOsservazioni: document.getElementById("ulterioriOsservazioni")?.value || "",
         consenso: consensoChecked.value,
         geoloc: document.getElementById("jotformGeoloc")?.value || "",
         fileBase64: base64,
         fileName: firstFile.name,
-        fileType: firstFile.type || "image/jpeg",
+        fileType: firstFile.type || "application/octet-stream",
+        speciesArray,
       };
 
       const res = await fetch("/.netlify/functions/submit-jotform", {
@@ -1876,19 +1875,22 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.ok) {
         alert("Dati inviati correttamente a Jotform.");
         form.reset();
+        selectedImagesA2 = [];
+        renderPreviewsA2();
         const previewBox = document.getElementById("imagePreviewBox");
         const previewContainer = document.getElementById("previewContainer");
         if (previewBox) previewBox.style.display = "none";
         if (previewContainer) previewContainer.innerHTML = "";
 
-        // Torna automaticamente all'inizio del modulo farfalle
+        // Torna automaticamente all'inizio del modulo
         const rect = form.getBoundingClientRect();
-        const scrollTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+        const scrollTop =
+          window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
         const targetY = rect.top + scrollTop;
         window.scrollTo({ top: targetY, behavior: "smooth" });
       } else {
         console.error("Errore Jotform:", text);
-        alert("Errore nell'invio a Jotform:\n" + text);
+        alert("Errore nell'invio a Jotform:\\n" + text);
       }
     } catch (err) {
       console.error("Errore invio Netlify function:", err);
@@ -1901,38 +1903,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-function removeSpecies(btn) {
-  const box = btn.closest('.species-box');
-  const container = document.getElementById('speciesFieldsContainer');
-  if (!box) return;
-  const boxes = container.querySelectorAll('.species-box');
-  if (boxes.length <= 1) return;
-  box.remove();
-  let index = 1;
-  container.querySelectorAll('.species-box').forEach(b => {
-    b.dataset.index = index;
-    const title = b.querySelector('.species-title');
-    if (title) title.textContent = "Specie " + index;
-    index++;
-  });
-}
-
-
-document.addEventListener('DOMContentLoaded', () => {
-  const fileInput = document.getElementById('butterflyImage');
-  const birdnetBox = document.getElementById('birdnetBox');
-  if (!fileInput || !birdnetBox) return;
-  fileInput.addEventListener('change', () => {
-    const files = Array.from(fileInput.files || []);
-    const hasAudio = files.some(file =>
-      file.type.startsWith('audio') ||
-      /\.(mp3|wav|m4a|aac|ogg|flac)$/i.test(file.name)
-    );
-    birdnetBox.style.display = hasAudio ? 'block' : 'none';
-  });
-});
-
-
 // === AUTOCOMPILAZIONE DA EXIF PER DATA + GPS ===
 function dmsToDecimal(dmsArray, ref) {
   if (!Array.isArray(dmsArray) || dmsArray.length < 3) return null;
