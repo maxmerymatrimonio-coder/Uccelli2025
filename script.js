@@ -1216,6 +1216,23 @@ const AUDIO_ICON_URL = "audio-book.jpg";
 
 function showExifWarning() {
   const box = document.getElementById("exifWarningBox");
+
+  // Se data + coordinate sono già presenti nel form, NON mostrare l'avviso
+  const dateField = document.getElementById("dataAvvistamento");
+  const latField  = document.getElementById("latitudine");
+  const lngField  = document.getElementById("longitudine");
+
+  const hasDate = !!(dateField && dateField.value);
+  const hasLat  = !!(latField && latField.value);
+  const hasLng  = !!(lngField && lngField.value);
+
+  if (hasDate && hasLat && hasLng) {
+    if (box) {
+      box.classList.remove("visible");
+    }
+    return;
+  }
+
   if (box) {
     box.classList.add("visible");
   } else {
@@ -1229,6 +1246,7 @@ function showExifWarning() {
     );
   }
 }
+
 
 function hideExifWarning() {
   const box = document.getElementById("exifWarningBox");
