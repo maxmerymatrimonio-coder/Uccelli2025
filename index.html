@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+
+<html lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Area Metropolitana di Milano — Scheda Uccelli</title>
+<link href="styles.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="page">
+<div class="card">
+<h1>Area Metropolitana di Milano</h1>
+<div class="sub">Scheda di rilievo Ornitologico</div>
+<form accept-charset="utf-8" action="https://eu-submit.jotform.com/submit/253234849989376" enctype="multipart/form-data" id="butterfly-form" method="POST">
+<input name="formID" type="hidden" value="253234849989376"/>
+<input name="simple_spc" type="hidden" value="253234849989376"/>
+<input name="website" style="display:none" type="text" value=""/>
+<input id="jotformGeoloc" name="q326_scriviUna326" type="hidden" value=""/>
+<!-- ISTRUZIONI -->
+<hr/>
+<div class="row"><strong>Dati del rilevatore</strong></div>
+<div class="row">
+<label for="nomeRilevatore">Nome e Cognome</label>
+<input id="nomeRilevatore" name="q358_nomeE" placeholder="Es. Marco, Maria, Volontario..." type="text"/>
+</div>
+<div class="row">
+<label for="enteTitolo">Ente appartenenza / Titolo</label>
+<input id="enteTitolo" name="q359_enteAppartenenza" placeholder="" type="text"/>
+</div>
+<div class="row">
+<label for="email">E-mail di riferimento <span style="color:#dc2626">*</span></label>
+<input id="email" name="q128_emailDi" placeholder="Inserisci e-mail" required="" type="email"/>
+</div>
+<div class="row">
+<button class="btn" id="clearSavedUserData" style="background:#1d4ed8" type="button">Dimentica dati salvati su questo dispositivo</button>
+<div class="help">Nome, ente di appartenenza ed e-mail vengono salvati solo su questo dispositivo. Puoi cancellarli in qualsiasi momento.</div>
+</div>
+<!-- FILE UPLOAD -->
+<div class="row">
+<label for="butterflyImage">
+            File Upload <span style="color:#dc2626">*</span>
+<button aria-label="Informazioni caricamento" class="info-btn" onclick="toggleInfo('info-foto')" type="button">i</button>
+</label>
+<div class="info-box" id="info-foto">
+  📸🎧📹 <strong>Dettagli utili per il caricamento dei file</strong><br/><br/>
+
+  • Puoi caricare <strong>foto</strong>, <strong>video</strong> e <strong>audio</strong> (es. canti degli uccelli).<br/>
+  • Sono supportati i principali formati: <strong>JPG, PNG, HEIC/HEIF</strong> (foto),
+    <strong>MP4, MOV, AVI, MKV, WEBM, M4V</strong> (video) e <strong>M4A, WAV, MP3</strong> (audio).<br/><br/>
+
+  • Se carichi la <strong>foto originale</strong> scattata con lo smartphone  
+    (non inoltrata da WhatsApp), l’app può leggere automaticamente <strong>data</strong> e <strong>posizione GPS</strong>.<br/>
+  • Per <strong>video e audio</strong> i metadati non sempre sono disponibili, quindi <strong>data</strong> e <strong>posizione</strong> vanno inserite manualmente.<br/><br/>
+</div>
+<input accept="image/*,.heic,.heif,video/*,.mp4,.mov,.avi,.mkv,.webm,.m4v,audio/*,.m4a" id="butterflyImage" multiple="" name="q85_scattacaricaFoto[]" required="" type="file"/>
+<div class="help">Fino a 5 file supportati: foto, video e audio.</div>
+<div class="info-box" id="exifWarningBox">
+  ⚠️ <strong>Metadati EXIF non disponibili</strong><br/><br/>
+  La foto non contiene <strong>📅 data</strong> o <strong>📍 posizione GPS</strong>:
+  <strong>controlla data e posizione</strong>.<br/><br/>
+  Per ottenere foto con geotag:<br/>
+  📱 <strong>iPhone</strong>: Impostazioni → Privacy → Localizzazione → Fotocamera →
+  <strong>Attiva “Durante l’uso dell’app”</strong><br/>
+  🤖 <strong>Android</strong>: Fotocamera → Impostazioni →
+  <strong>Attiva “Localizzazione / Tag GPS”</strong>
+</div>
+<!-- BOX BIRDNET: visibile solo se c'è almeno un audio -->
+<div class="birdnet-box" id="birdnetBox" style="display:none;">
+<div class="birdnet-inner">
+<img alt="Icona audio" class="birdnet-icon" src="audio-book.jpg"/>
+<div class="birdnet-text">
+<h3>Vuoi identificare la specie?</h3>
+<p>Fai upload del canto su BirdNET per provare a riconoscerla.</p>
+<a class="btn btn-birdnet" href="https://birdnet.cornell.edu/api/" rel="noopener" target="_blank">
+        Apri BirdNET
+      </a>
+</div>
+</div>
+</div>
+<!-- A2 IMAGE PREVIEW BOX -->
+<div class="image-preview-box" id="imagePreviewBox" style="display:none;">
+<h3>📸📹 Anteprima file caricati (foto e video)</h3>
+<div id="previewContainer"></div>
+</div>
+</div>
+<!-- DATA AVVISTAMENTO -->
+<div class="row">
+<label for="dataAvvistamento">Data avvistamento</label>
+<input id="dataAvvistamento" name="q356_dataAvvistamento" type="date"/>
+<div class="help">*Se la foto contiene la data di scatto, questo campo può compilarsi automaticamente.</div>
+</div>
+<!-- CAMPI SPECIE (solo se Sì) -->
+<div id="speciesFields">
+<div id="speciesFieldsContainer">
+<div class="species-box" data-index="1">
+<div class="species-box-header">
+<span class="species-title">Specie 1</span>
+<button class="btn-remove-species" onclick="removeSpecies(this)" type="button">❌</button>
+</div>
+<div class="row">
+<label for="nomeSpecie">Nome specie</label>
+<input id="nomeSpecie" list="speciesList" name="q110_nomeSpecie" placeholder="Inizia a digitare..." type="text" autocomplete="off"/>
+<datalist id="speciesList">
+<option value="">Seleziona specie</option>
+<option value="indeterminata">Specie non determinata (indeterminata)</option>
+<option value="Airone bianco maggiore"></option>
+<option value="Airone cenerino"></option>
+<option value="Airone guardabuoi"></option>
+<option value="Airone rosso"></option>
+<option value="Allocco"></option>
+<option value="Allodola"></option>
+<option value="Anatra germanata"></option>
+<option value="Anatra mandarina"></option>
+<option value="Anatra muta"></option>
+<option value="Assiolo"></option>
+<option value="Astore"></option>
+<option value="Averla maggiore"></option>
+<option value="Averla piccola"></option>
+<option value="Balestruccio"></option>
+<option value="Balia nera"></option>
+<option value="Ballerina bianca"></option>
+<option value="Ballerina gialla"></option>
+<option value="Barbagianni"></option>
+<option value="Beccaccia"></option>
+<option value="Beccaccino"></option>
+<option value="Beccafico"></option>
+<option value="Canapino"></option>
+<option value="Capinera"></option>
+<option value="Cardellino"></option>
+<option value="Cavaliere d’Italia"></option>
+<option value="Cesena"></option>
+<option value="Cicogna bianca"></option>
+<option value="Cicogna nera"></option>
+<option value="Cigno reale"></option>
+<option value="Cincia bigia"></option>
+<option value="Cincia dal ciuffo"></option>
+<option value="Cincia mora"></option>
+<option value="Cinciallegra"></option>
+<option value="Cinciarella"></option>
+<option value="Civetta"></option>
+<option value="Codibugnolo"></option>
+<option value="Codirosso"></option>
+<option value="Codirosso spazzacamino"></option>
+<option value="Colombaccio"></option>
+<option value="Cornacchia grigia"></option>
+<option value="Cornacchia nera"></option>
+<option value="Cormorano"></option>
+<option value="Corriere grosso"></option>
+<option value="Corriere piccolo"></option>
+<option value="Cuculo"></option>
+<option value="Cutrettola"></option>
+<option value="Fagiano"></option>
+<option value="Falco di palude"></option>
+<option value="Falco pellegrino"></option>
+<option value="Falco pescatore"></option>
+<option value="Fenicottero"></option>
+<option value="Fiorrancino"></option>
+<option value="Fischione"></option>
+<option value="Folaga"></option>
+<option value="Fringuello"></option>
+<option value="Frosone"></option>
+<option value="Gabbiano comune"></option>
+<option value="Gabbiano reale"></option>
+<option value="Gallinella d’acqua"></option>
+<option value="Garzetta"></option>
+<option value="Gavina"></option>
+<option value="Gazza"></option>
+<option value="Germano reale"></option>
+<option value="Gheppio"></option>
+<option value="Ghiandaia"></option>
+<option value="Gru"></option>
+<option value="Gruccione"></option>
+<option value="Gufo comune"></option>
+<option value="Ibis sacro"></option>
+<option value="Lodolaio"></option>
+<option value="Lucherino"></option>
+<option value="Luì bianco"></option>
+<option value="Luì grosso"></option>
+<option value="Luì piccolo"></option>
+<option value="Luì verde"></option>
+<option value="Marangone minore"></option>
+<option value="Martin pescatore"></option>
+<option value="Marzaiola"></option>
+<option value="Merlo"></option>
+<option value="Mestolone"></option>
+<option value="Migliarino di palude"></option>
+<option value="Mignattaio"></option>
+<option value="Moretta"></option>
+<option value="Moretta tabaccata"></option>
+<option value="Moriglione"></option>
+<option value="Nibbio bruno"></option>
+<option value="Nitticora"></option>
+<option value="Oca selvatica"></option>
+<option value="Parrocchetto dal collare"></option>
+<option value="Parrocchetto monaco"></option>
+<option value="Passera d’Italia"></option>
+<option value="Passera mattugia"></option>
+<option value="Passera scopaiola"></option>
+<option value="Pavoncella"></option>
+<option value="Pendolino"></option>
+<option value="Pernice rossa"></option>
+<option value="Pettirosso"></option>
+<option value="Piccione"></option>
+<option value="Picchio muratore"></option>
+<option value="Picchio rosso maggiore"></option>
+<option value="Picchio rosso minore"></option>
+<option value="Picchio verde"></option>
+<option value="Pigliamosche"></option>
+<option value="Piro piro piccolo"></option>
+<option value="Poiana"></option>
+<option value="Quaglia"></option>
+<option value="Regolo"></option>
+<option value="Rigogolo"></option>
+<option value="Rondine"></option>
+<option value="Rondine montana"></option>
+<option value="Rondone comune"></option>
+<option value="Rondone maggiore"></option>
+<option value="Rondone pallido"></option>
+<option value="Saltimpalo"></option>
+<option value="Scricciolo"></option>
+<option value="Sgarza ciuffetto"></option>
+<option value="Smergo maggiore"></option>
+<option value="Sparviere"></option>
+<option value="Sterna comune"></option>
+<option value="Stiaccino"></option>
+<option value="Storno"></option>
+<option value="Succiacapre"></option>
+<option value="Svasso maggiore"></option>
+<option value="Taccola"></option>
+<option value="Tarabuso"></option>
+<option value="Tarabusino"></option>
+<option value="Tordo bottaccio"></option>
+<option value="Topino"></option>
+<option value="Torcicollo"></option>
+<option value="Tortora dal collare"></option>
+<option value="Tortora selvatica"></option>
+<option value="Tuffetto"></option>
+<option value="Upupa"></option>
+<option value="Usignolo"></option>
+<option value="Usignolo di fiume"></option>
+<option value="Verdone"></option>
+<option value="Verzellino"></option>
+
+
+</option></datalist></div>
+<div class="row">
+<label for="numeroIndividui">Numero individui</label>
+<select id="numeroIndividui" name="q23_numeroIndividui">
+<option value="">Inserisci numero</option>
+<option value="1">1</option>
+<option value="2">2</option>
+<option value="3-10">3–10</option>
+<option value="11-50">11–50</option>
+<option value="&gt;50">&gt;50</option>
+</select>
+</div>
+<div class="row">
+<label for="sessoSpecie">Sesso</label>
+<select id="sessoSpecie" name="q360_sessoSpecie">
+<option value="">Seleziona sesso</option>
+<option value="Maschio">Maschio</option>
+<option value="Femmina">Femmina</option>
+<option value="Non determinato">Non determinato</option>
+</select>
+</div>
+<!-- Campo nascosto: Hai avvistato cavità? -->
+<div class="row cavita-row" style="display:none;">
+<!-- Nuovi campi per cavità e civico (visibili se "Sì" è selezionato) -->
+<div class="row cavita-details-row" style="display:none;">
+    <label for="numeroCavita">Se possibile, inserisci il numero di cavità avvistate</label>
+    <input type="number" id="numeroCavita" name="numeroCavita" placeholder="Es. 3" />
+</div>
+
+<div class="row civico-details-row" style="display:none;">
+    <label for="numeroCivico">Se possibile, inserisci il numero civico dell'edificio</label>
+    <input type="text" id="numeroCivico" name="numeroCivico" placeholder="Es. 12A" />
+</div>
+
+<label>Hai avvistato cavità?</label>
+<div class="inline">
+<label>
+<input type="radio" name="cavita[]" value="No"/> No
+</label>
+<label>
+<input type="radio" name="cavita[]" value="Si"/> Sì
+</label>
+</div>
+</div>
+<div class="row codici-atlante-row">
+<button class="btn-codici-atlante" type="button">CODICI ATLANTE</button>
+<div class="codici-atlante-selected">Nessun codice selezionato
+                <input class="codici-atlante-note-value" name="codiciAtlanteNote[]" type="hidden"/></div>
+<input class="codici-atlante-value" name="codiciAtlante[]" type="hidden"/>
+</div>
+</div>
+</div>
+<div class="row">
+<button class="btn" id="addSpeciesRow" type="button">+ Aggiungi specie</button>
+</div>
+<div class="species-box ambiente-box">
+<div class="species-box-header">
+<span class="species-title">Ambiente circostante</span>
+</div>
+<div class="checkbox-group">
+<label>
+<input name="q25_ambienteCircostante[]" type="checkbox" value="Verde urbano"/>
+      🌳 Verde urbano
+    </label>
+<label>
+<input name="q25_ambienteCircostante[]" type="checkbox" value="Area edificata"/>
+      🏠 Area edificata
+    </label>
+<label>
+<input name="q25_ambienteCircostante[]" type="checkbox" value="Presenza d'acqua"/>
+      💧 Presenza d'acqua
+    </label>
+<label>
+<input name="q25_ambienteCircostante[]" type="checkbox" value="Area industriale"/>
+      🏭 Area industriale
+    </label>
+<label>
+<input name="q25_ambienteCircostante[]" type="checkbox" value="Area agricola"/>
+      🌾 Area agricola
+    </label>
+<label>
+<input name="q25_ambienteCircostante[]" type="checkbox" value="Terrazza/balcone"/>
+      🏡 Terrazza/balcone
+    </label>
+</div>
+<div class="help" style="margin-top:6px">Puoi selezionare uno o più ambienti.</div>
+</div>
+<div class="row">
+<label for="ulterioriOsservazioni">Ulteriori osservazioni</label>
+<textarea id="ulterioriOsservazioni" name="q322_ulterioriOsservazioni" placeholder="Aggiungi ulteriori osservazioni...es. uccello morto, ferito ecc"></textarea>
+</div>
+</div>
+<hr/>
+<div class="row">
+<strong>Geolocalizzazione
+            <button aria-label="Informazioni mappa" class="info-btn" onclick="toggleInfo('info-mappa')" type="button">i</button>
+</strong>
+</div>
+<div class="info-box" id="info-mappa">
+          📍 <strong>Correggi la posizione:</strong> Il segnaposto rosso indica dove è stata scattata la foto. Se la posizione non è precisa, <strong>tieni premuto sul segnaposto rosso e trascinalo</strong> esattamente dove hai visto la farfalla.
+        </div>
+<div class="row">
+<div id="map">Mappa (segnaposto)</div>
+</div>
+<!-- Campi nascosti per coordinate -->
+<input id="latitudine" name="latitudine" type="hidden"/>
+<input id="longitudine" name="longitudine" type="hidden"/>
+<hr/>
+<div class="row"><strong>Consenso al trattamento dati</strong></div>
+<div class="row">
+<div class="inline" style="margin-bottom:6px;">
+<label><input name="q266_ilSottoscritto" type="radio" value="Acconsento"/> Acconsento</label>
+<label><input name="q266_ilSottoscritto" type="radio" value="Non Acconsento"/> Non acconsento</label>
+</div>
+<div class="warning" id="consentWarning">Per inviare il modulo è necessario selezionare “Acconsento”.</div>
+<div class="help" style="margin-top:6px">
+            Autorizzo il trattamento dei dati personali ai sensi del Regolamento (UE) 2016/679 (GDPR).<br/>
+            Le informazioni inserite nel modulo e i metadati delle immagini (es. data di scatto e coordinate GPS) sono utilizzati solo per l’identificazione della specie vegetale e per registrare la segnalazione.<br/>
+            Nessun dato viene utilizzato per finalità diverse da quelle indicate.
+          </div>
+</div>
+<div class="row">
+<button class="btn btn-full" id="submitButton" type="submit">Invia</button>
+</div>
+</form>
+</div>
+</div>
+<script src="https://unpkg.com/exifr/dist/full.umd.js"></script> <script src="https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js"></script>
+<script src="script.js"></script>
+<!-- Google Maps API: sostituisci LA_TUA_API_KEY con la tua chiave -->
+<script async="" defer="" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBFqrEMPkyXtZZXnUzVk9U9UxedbeMpxw8&amp;callback=initMap"></script>
+<!-- MODALE CODICI ATLANTE -->
+<div class="codici-modal" id="codiciAtlanteModal">
+<div class="codici-modal-content">
+<button class="codici-close" id="codiciAtlanteClose" type="button">×</button>
+<h3>Codici Atlante</h3>
+<p class="codici-help">Seleziona uno o più codici per questa specie, poi chiudi con la X.</p>
+<div class="codici-list">
+<h4>Possibile sito di nidificazione</h4>
+<label><input type="checkbox" value="1"/> 1 – Osservazione della specie nel suo periodo riproduttivo</label>
+<label><input type="checkbox" value="2"/> 2 – Specie osservata durante il periodo riproduttivo nel suo habitat</label>
+<label><input type="checkbox" value="3a"/> 3 – Udito richiami nuziali o tambureggiamento</label>
+<label><input type="checkbox" value="3b"/> 3 – Visto maschio in parata</label>
+<label><input type="checkbox" value="3c"/> 3 – Maschio in canto presente in periodo di nidificazione</label>
+<h4>Probabile sito di nidificazione</h4>
+<label><input type="checkbox" value="4"/> 4 – Coppia presente nel suo habitat nel suo periodo di nidificazione</label>
+<label><input type="checkbox" value="5"/> 5 – Comportamento territoriale (canto, comportamento aggressivo, ecc.)</label>
+<label><input type="checkbox" value="6"/> 6 – Comportamento nuziale: parata, accoppiamento o scambio di nutrimento tra adulti</label>
+<label><input type="checkbox" value="7"/> 7 – Visita di un probabile sito di nidificazione</label>
+<label><input type="checkbox" value="8"/> 8 – Gridì d’allarme o altri comportamenti che indicano la presenza di un nido o di giovani nelle vicinanze</label>
+<label><input type="checkbox" value="10"/> 10 – Trasporto di materiale o costruzione di un nido, scavo di una cavità</label>
+<h4>Nidificazione certa</h4>
+<label><input type="checkbox" value="12"/> 12 – Nido vuoto utilizzato di recente o gusci d’uovo della stagione in corso</label>
+<label><input type="checkbox" value="13"/> 13 – Giovani involati di recente o incapaci di volare</label>
+<label><input type="checkbox" value="14"/> 14 – Adulto che arriva a un nido il cui contenuto non può essere verificato (troppo alto o in cavità)</label>
+<label><input type="checkbox" value="16"/> 16 – Adulto che trasporta cibo durante il periodo di nidificazione</label>
+<label><input type="checkbox" value="17"/> 17 – Gusci d’uovo schiusi o predati</label>
+<label><input type="checkbox" value="18"/> 18 – Nido con un adulto in cova</label>
+<label><input type="checkbox" value="19"/> 19 – Nido contenente uova o piccoli</label>
+</div>
+<div class="codici-extra">
+<label for="codiciNote">Altre osservazioni</label>
+<textarea class="codici-note" id="codiciNote" placeholder="Scrivi qui eventuali osservazioni aggiuntive per questa specie..."></textarea>
+</div>
+<!-- Lightbox for image enlargement -->
+<div id="lightbox">
+<span class="close-button" onclick="closeLightbox()">×</span>
+<!-- Freccia precedente -->
+<button class="lightbox-arrow lightbox-prev" onclick="prevImage()" type="button">‹</button>
+<img alt="Immagine ingrandita" id="lightboxImage" src=""/>
+<!-- Freccia successiva -->
+<button class="lightbox-arrow lightbox-next" onclick="nextImage()" type="button">›</button>
+</div>
+</div></div></body>
+</html>

@@ -1,0 +1,898 @@
+
+:root{
+  --primary:#1d4ed8;
+  --card:#d6e7ff;
+  --ink:#12458c;
+  --bg:#2461b7;
+  --ring:rgba(29,78,216,.18);
+  --line:#9cb5dd;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  background:var(--bg);
+  color:var(--ink);
+}
+.page{min-height:100%;display:flex;justify-content:center;align-items:flex-start;padding:24px 12px}
+.card{
+  width:100%;max-width:760px;background:var(--card);border-radius:12px;
+  padding:20px 18px 28px;box-shadow:0 6px 20px rgba(0,0,0,.12)
+}
+h1{margin:0 0 4px;text-align:center;font-size:24px}
+.sub{margin:0 0 18px;text-align:center}
+.row{margin:12px 0}
+label{display:block;font-weight:600;margin-bottom:6px}
+.help{font-size:13px;color:#2c5fa6}
+input[type="text"],input[type="email"],input[type="date"],input[type="file"],select,textarea{
+  width:100%;max-width:310px;padding:8px;border:1px solid var(--line);border-radius:6px;background:#fff
+}
+textarea{min-height:90px;max-width:100%}
+.inline{display:flex;gap:14px;flex-wrap:wrap}
+.inline label{font-weight:500;display:inline-flex;gap:6px;align-items:center}
+hr{border:none;border-bottom:1px solid var(--line);margin:16px 0}
+
+.btn{display:inline-flex;justify-content:center;align-items:center;padding:10px 16px;border:none;border-radius:8px;
+     background:var(--primary);color:#fff;font-weight:700;cursor:pointer;transition:background .12s,transform .05s,box-shadow .12s}
+.btn:hover{background:#1e40af;transform:translateY(-1px);box-shadow:0 2px 8px rgba(15,23,42,.2)}
+.btn:disabled{background:#9ca3af;cursor:default;box-shadow:none}
+.btn-full{width:100%;max-width:320px;display:block;margin:16px auto 0;}
+
+.warning{font-size:13px;color:#b91c1c;margin-top:6px;display:none}
+
+#map{
+  width:100%;
+  height:320px;
+  border:1px solid var(--line);
+  border-radius:8px;
+  background:#eef5ff;
+  overflow:hidden;
+}
+
+/* ======== COLOR GRID (transparent, compact, no labels, sharp splits) ======== */
+.color-section-title{font-weight:700;margin:8px 0 8px}
+.color-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(64px,1fr));gap:10px;width:100%}
+@media (max-width:420px){.color-grid{grid-template-columns:repeat(auto-fill,minmax(56px,1fr));gap:8px}}
+.color-btn{
+  display:flex;align-items:center;justify-content:center;padding:6px;border-radius:10px;
+  background:transparent;border:1px solid transparent;cursor:pointer;
+  transition:box-shadow .12s ease, transform .05s ease, border-color .12s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.color-btn:active{transform:translateY(1px);box-shadow:0 2px 6px rgba(0,0,0,.12)}
+.color-btn:hover{box-shadow:0 3px 10px rgba(15,23,42,.18)}
+.color-btn.selected{border-color:var(--primary);box-shadow:0 0 0 3px var(--ring) inset}
+
+.swatch{width:100%;height:28px;border-radius:8px;overflow:hidden;display:flex;border:1px solid rgba(18,69,140,.25)}
+.part{height:100%}
+
+/* Solid colors */
+.c-nero{background:#000}
+.c-bianco{background:#fff}
+.c-verde{background:#a0a06a}
+.c-rosso{background:#cf3b32}
+.c-marrone{background:#744532}
+.c-marrone-scuro{background:#5c352f}
+.c-giallo{background:#f6f069}
+.c-arancio{background:#f28a3c}
+.c-azzurro{background:#66ade5}
+
+
+/* ===== Scheda specie (Occhio di pavone) ===== */
+.species-card{
+  background:#fff;
+  border-radius:10px;
+  border:1px solid var(--line);
+  padding:10px 12px;
+}
+.species-body{
+  margin-top:8px;
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  align-items:flex-start;
+}
+.species-images{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.species-images img {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+}
+
+/* Blocchi immagine standard */
+.img-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.species-text{
+  flex:1;
+  min-width:160px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.species-text /* ===== Lightbox immagini ===== */
+.lightbox-backdrop{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.65);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+}
+.lightbox-backdrop.active{
+  display:flex;
+}
+.lightbox-image{
+  max-width:90vw;
+  max-height:90vh;
+  border-radius:10px;
+  box-shadow:0 10px 40px rgba(0,0,0,.4);
+  background:#fff;
+}
+
+
+.img-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.img-block img {
+  width: 100%;
+  border-radius: 8px;
+}
+
+.caption {
+  font-size: 12px;
+  color: #555;
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.pieris-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 768px) {
+  .pieris-cards {
+    flex-direction: row;
+  }
+  .pieris-cards .species-card {
+    flex: 1;
+  }
+}
+
+
+
+/* Uniform image cropping */
+
+.species-images img {
+  width: 100%;
+  height: auto;
+  max-height: none;
+  object-fit: contain;
+  border-radius: 12px;
+  display: block;
+}
+
+/* Blocchi immagine standard */
+.img-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+
+/* Ensure image blocks align nicely */
+.img-block {
+  overflow: hidden;
+}
+
+
+
+/* Layout a colonna: immagini sopra, testo sotto */
+.species-body{
+  margin-top:8px;
+  display:block;
+}
+
+.species-images{
+  margin-bottom:10px;
+}
+
+.species-text{
+  flex:none;
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.species-text /* A2 Preview Box */
+.image-preview-box {
+    border: 2px solid #1d4ed8;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #ffffff;
+    margin-top: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.image-preview-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+#previewContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+
+.image-thumbnail {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid #e5e7eb;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+
+.image-thumbnail:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(29,78,216,0.35);
+}
+
+.video-thumbnail {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    display: block;
+}
+
+.file-placeholder {
+    min-width: 120px;
+    min-height: 120px;
+    padding: 6px;
+    border-radius: 8px;
+    border: 2px dashed #e5e7eb;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.audio-thumbnail {
+    width: 120px;
+    min-height: 120px;
+    padding: 8px;
+    border-radius: 8px;
+    border: 2px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    gap: 4px;
+}
+
+.audio-thumbnail .audio-icon {
+    width: 40px;
+    height: 40px;
+}
+
+.audio-thumbnail .audio-label {
+    font-size: 11px;
+    text-align: center;
+    word-break: break-word;
+}
+/* ——— Wrapper + X di cancellazione per ogni miniatura ——— */
+.thumbnail-wrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.thumbnail-delete {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.9);
+    color: #fff;
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+    z-index: 3;
+    transition: 0.2s;
+}
+
+.thumbnail-delete:hover {
+    background: rgba(185, 28, 28, 1);
+    transform: scale(1.1);
+}
+
+/* A2 Preview Box */
+
+.image-preview-box {
+    border: 2px solid #1d4ed8;
+    padding: 12px 16px;
+    border-radius: 12px;
+    background: #ffffff;
+    margin-top: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.image-preview-box h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #1d4ed8;
+    font-weight: 600;
+}
+#previewContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+}
+.image-thumbnail {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid #e5e7eb;
+    transition: transform 0.22s ease, box-shadow 0.22s ease;
+}
+.image-thumbnail:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(29,78,216,0.35);
+}
+
+
+/* LIGHTBOX STYLES (con frecce + animazioni) */
+#lightbox {
+  display: none;                /* Mostrato via JS */
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.9);
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  box-sizing: border-box;
+}
+
+/* Immagine dentro il lightbox */
+#lightbox img {
+  max-width: 90vw;
+  max-height: 90vh;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 0 !important;
+}
+
+/* Animazioni immagine */
+#lightbox img.animate-in {
+  animation: lightboxZoomIn 0.25s ease-out forwards;
+}
+
+#lightbox img.animate-out {
+  animation: lightboxZoomOut 0.20s ease-in forwards;
+}
+
+@keyframes lightboxZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes lightboxZoomOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+}
+
+/* Bottone X chiusura */
+.close-button {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  color: #fff;
+  font-size: 32px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 10000;
+  transition: opacity 0.2s;
+}
+
+.close-button:hover {
+  opacity: 0.7;
+}
+
+/* Frecce di navigazione */
+.lightbox-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10000;
+  padding: 0;
+  line-height: 1;
+  transition: background 0.2s, transform 0.15s;
+}
+
+.lightbox-arrow:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: translateY(-50%) scale(1.05);
+}
+
+.lightbox-prev {
+  left: 16px;
+}
+
+.lightbox-next {
+  right: 16px;
+}
+
+/* Ottimizzazione per schermi piccoli (telefono) */
+@media (max-width: 640px) {
+  .lightbox-arrow {
+    width: 34px;
+    height: 34px;
+    font-size: 22px;
+  }
+
+  .close-button {
+    font-size: 28px;
+    top: 12px;
+    right: 16px;
+  }
+}
+ altro elemento */
+  box-sizing: border-box;
+}
+
+#lightbox img {
+  max-width: 90%; /* Limita la dimensione massima dell'immagine al 90% della viewport */
+  max-height: 90%;
+  width: auto;
+  height: auto;
+  object-fit: contain; /* Assicura che l'immagine sia completamente visibile */
+  border-radius: 0 !important; /* Rettangolare, nessun angolo arrotondato */
+}
+
+.close-button {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  color: #fff;
+  font-size: 40px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 10000; /* Assicurati che il pulsante X sia sopra l'immagine */
+  transition: opacity 0.2s;
+}
+
+.close-button:hover {
+  opacity: 0.7;
+}
+
+
+
+/* --- STILE PULSANTE INFO (i) --- */
+.info-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--primary); /* Il blu del tuo tema */
+  color: #fff;
+  font-family: "Times New Roman", Times, serif; /* Font serif per la 'i' classica */
+  font-style: italic;
+  font-weight: bold;
+  font-size: 14px;
+  margin-left: 8px;
+  cursor: pointer;
+  border: none;
+  transition: transform 0.1s, background 0.2s;
+  vertical-align: middle; /* Allinea col testo */
+}
+
+.info-btn:hover {
+  background: #1e40af; /* Blu più scuro al passaggio */
+  transform: scale(1.1);
+}
+
+/* --- STILE BOX DI TESTO A COMPARSA --- */
+.info-box {
+  display: none; /* Nascosto di base */
+  background: #eff6ff; /* Azzurro chiarissimo */
+  border-left: 4px solid var(--primary);
+  padding: 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  animation: slideDown 0.2s ease-out;
+}
+
+.info-box.visible {
+  display: block; /* Diventa visibile quando cliccato */
+}
+
+/* Animazione fluidità */
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-5px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* Box per gruppi specie (Specie 1, Specie 2, ...) */
+.species-box {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.04);
+  border: 1px solid #d8e0ef;
+}
+.species-box-header{
+  font-weight:700;
+  margin-bottom:8px;
+  color:var(--ink);
+}
+
+/* X rossa elegante */
+.btn-remove-species {
+  border: none;
+  background: transparent;
+  color: #d11a1a;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px 6px;
+  line-height: 1;
+  border-radius: 6px;
+  transition: 0.2s ease;
+}
+.btn-remove-species:hover {
+  background: rgba(209, 26, 26, 0.12);
+  transform: scale(1.15);
+}
+/* Nascondi X nella prima specie */
+.species-box[data-index="1"] .btn-remove-species {
+  visibility: hidden;
+}
+
+.codici-atlante-row{margin-top:18px;}
+.btn-codici-atlante{
+  font-size:13px;
+  padding:4px 10px;
+  border-radius:8px;
+  border:1px solid var(--primary);
+  background:rgba(29,78,216,0.06);
+  color:var(--ink);
+  cursor:pointer;
+}
+.btn-codici-atlante:hover{
+  background:rgba(29,78,216,0.14);
+}
+
+.species-box{position:relative;}
+
+.species-info-wrapper{position:absolute; top:10px; right:10px; display:inline-flex; align-items:center;}
+
+/* Added extra vertical spacing for radio group */
+.inline { margin-top: 12px; }
+
+/* === EVEN TIGHTER SPACING: AVVISTAMENTO ALMOST TOUCHING SPECIE BOX === */
+.avvistamento-header { margin-bottom: 0px !important; }
+.row:has(.avvistamento-header) { margin-bottom: 0px !important; margin-top: 2px !important; }
+.species-box { margin-top: 0px !important; }
+
+/* === EXTREME TIGHT SPACING: ZERO / NEGATIVE MARGIN === */
+.avvistamento-header { margin-bottom: 0px !important; }
+.row:has(.avvistamento-header) { margin-bottom: 0px !important; margin-top: 0px !important; }
+.species-box { margin-top: -2px !important; } /* slight negative to pull it closer */
+
+
+/* ===== MODALE CODICI ATLANTE ===== */
+.codici-modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:10000;
+}
+
+.codici-modal.open{
+  display:flex;
+}
+
+.codici-modal-content{
+  position:relative;
+  background:#ffffff;
+  border-radius:12px;
+  padding:16px 18px 18px;
+  max-width:420px;
+  width:90%;
+  box-shadow:0 10px 30px rgba(0,0,0,.25);
+  font-size:14px;
+  color:#111827;
+}
+
+.codici-modal-content h3{
+  margin:0 0 4px;
+  font-size:16px;
+}
+
+.codici-modal-content h4{
+  margin:10px 0 4px;
+  font-size:13px;
+  font-weight:600;
+  color:#1f2937;
+}
+
+.codici-close{
+  position:absolute;
+  top:6px;
+  right:10px;
+  border:none;
+  background:transparent;
+  font-size:22px;
+  cursor:pointer;
+  color:#4b5563;
+}
+
+.codici-help{
+  font-size:12px;
+  color:#4b5563;
+  margin:4px 0 10px;
+}
+
+.codici-list{
+  max-height:260px;
+  overflow:auto;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.codici-list label{
+  font-weight:500;
+  display:flex;
+  align-items:flex-start;
+  gap:6px;
+  cursor:pointer;
+}
+
+.codici-list input[type="checkbox"]{
+  margin-top:2px;
+}
+
+/* Testo di riepilogo sotto al pulsante CODICI ATLANTE */
+.codici-atlante-selected{
+  margin-top:4px;
+  font-size:12px;
+  color:#374151;
+}
+
+/* ==== CARD STYLE PER BOX SPECIE ==== */
+.species-box {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  margin-bottom: 32px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e5e7eb;
+}
+
+.species-box-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 18px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Nota aggiuntiva nel modale Codici Atlante */
+.codici-extra{
+  margin-top:10px;
+  border-top:1px solid #e5e7eb;
+  padding-top:8px;
+}
+
+.codici-extra label{
+  font-size:13px;
+  font-weight:600;
+  display:block;
+  margin-bottom:4px;
+}
+
+.codici-note{
+  width:100%;
+  min-height:60px;
+  padding:6px 8px;
+  border-radius:6px;
+  border:1px solid #d1d5db;
+  resize:vertical;
+  font-size:13px;
+}
+
+
+.birdnet-box {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+}
+.birdnet-inner {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.birdnet-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  flex-shrink: 0;
+}
+.birdnet-text h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.birdnet-text p {
+  margin: 0 0 8px;
+  font-size: 13px;
+}
+.btn-birdnet {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+
+/* CORREZIONE SPAZI ECCESSIVI NELLE SPECIE */
+.species-box {
+    margin-bottom: 8px !important;
+    padding: 14px !important;
+}
+.row {
+    margin: 6px 0 !important;
+}
+
+
+/* BOX AMBIENTE — stile identico alle SPECIE */
+.ambiente-box {
+    margin-top: 10px !important;
+    margin-bottom: 10px !important;
+    padding: 16px !important;
+}
+
+.ambiente-box .species-box-header {
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ambiente-box .species-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+}
+
+/* Checkbox più compatti e allineati bene */
+.ambiente-box .checkbox-group label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+    font-size: 14px;
+}
+
+/* distanza sesso e codici atlante */
+.codici-atlante-row { margin-top: 16px !important; }
+
+
+/* Ingrandimento delle caselle di selezione dell'ambiente */
+.ambiente-box .checkbox-group input[type='checkbox'] {
+    transform: scale(1.2); /* Aumenta la dimensione delle caselle di controllo */
+}
+
+/* Ingrandimento delle caselle di selezione Codice Atlante Uccelli */
+.codici-list input[type='checkbox'] {
+    transform: scale(1.2); /* Aumenta la dimensione delle caselle di controllo del Codice Atlante */
+}
+
+/* Spazio extra tra data avvistamento e primo box specie */
+#dataAvvistamento {
+    margin-bottom: 16px !important;
+}
+
+#speciesFields .species-box[data-index="1"] {
+    margin-top: 18px !important;
+}
+
+
+/* Sposta "Uccello morto" completamente a destra */
+.species-box-header {
+    display: flex;
+    align-items: center;
+}
+
+.species-options {
+    margin-left: auto !important;
+    margin-right: 2px !important;
+    display: flex;
+    align-items: center;
+}
+
+.dead-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dead-checkbox input[type="checkbox"] {
+    transform: scale(1.2);
+}
