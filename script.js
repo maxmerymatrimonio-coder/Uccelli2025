@@ -1738,7 +1738,6 @@ document.addEventListener("DOMContentLoaded", function() {
 // ===============================================
 // INVIO MODULO VIA NETLIFY FUNCTION → JOTFORM (Pacchetto B)
 // ===============================================
-
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("butterfly-form");
   const fileInput = document.getElementById("butterflyImage");
@@ -1746,12 +1745,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (!form || !fileInput) return;
 
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("Impossibile leggere il file selezionato."));
+      reader.readAsDataURL(file);
+    });
+  }
+
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     // Controlli base
     if (!fileInput.files || fileInput.files.length === 0) {
-      alert("Carica almeno una foto, video o audio prima di inviare.");
+      alert("Carica almeno una foto prima di inviare.");
       return;
     }
 
@@ -1773,120 +1781,102 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      // Nome + cognome da campo unico
-      const fullNameValue = document.getElementById("nomeRilevatore")?.value?.trim() || "";
-      let nome = "";
-      let cognome = "";
-      if (fullNameValue) {
-        const parts = fullNameValue.split(/\s+/);
-        nome = parts.shift() || "";
-        cognome = parts.join(" ");
-      }
+      const firstFile = fileInput.files[0];
+      const dataUrl = await readFileAsDataURL(firstFile);
+      const base64 = dataUrl.split(",")[1];
 
-      const ente = document.getElementById("enteTitolo")?.value || "";
-      const email = emailInput.value;
-      const dataavvistamento = document.getElementById("dataAvvistamento")?.value || "";
-      const ulterioriosservazioni = document.getElementById("ulterioriOsservazioni")?.value || "";
-
-      // Ambiente circostante (checkbox multipla)
-      const ambienteChecks = Array.from(
-        document.querySelectorAll('input[name="q25_ambienteCircostante[]"]:checked')
-      );
-      const ambientecircostante = ambienteChecks.map((c) => c.value);
-
-      // Coordinate / mappa
-      const lat = document.getElementById("latitudine")?.value || "";
-      const lng = document.getElementById("longitudine")?.value || "";
-      const geoHidden = document.getElementById("jotformGeoloc")?.value || "";
-      const mappa = lat && lng ? `${lat}, ${lng}` : geoHidden;
-
-      // Costruzione speciesArray + numero cavità / numero civico
-      function buildSpeciesArray() {
-        const speciesContainer = document.getElementById("speciesFieldsContainer");
-        if (!speciesContainer) return { speciesArray: [], numeroCavitaAvvistate: "", numeroCivico: "" };
-
-        const boxes = speciesContainer.querySelectorAll(".species-box");
-        const speciesArray = [];
-        let numeroCavitaAvvistate = "";
-        let numeroCivico = "";
-
-        boxes.forEach((box) => {
-          const nomeInput = box.querySelector('input[name="q110_nomeSpecie"]');
-          const numSelect = box.querySelector('select[name="q23_numeroIndividui"]');
-          const sessoSelect = box.querySelector('select[name="q360_sessoSpecie"]');
-          const codiciHidden = box.querySelector(".codici-atlante-value");
-          const noteHidden = box.querySelector(".codici-atlante-note-value");
-
-          const nomeSpecie = nomeInput?.value?.trim() || "";
-          const numeroSpecie = numSelect?.value || "";
-          const sessoSpecie = sessoSelect?.value || "";
-
-          const atlanteUccelli = (codiciHidden?.value || "")
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-
-          const note = noteHidden?.value || "";
-
-          // cavità per rondoni
-          const cavitaRadios = box.querySelectorAll('input[name="cavita[]"]');
-          let cavitaVal = "";
-          cavitaRadios.forEach((r) => {
-            if (r.checked) cavitaVal = r.value;
-          });
-
-          const cavitaNumInput =
-            box.querySelector("#numeroCavita") || box.querySelector('input[name="numeroCavita"]');
-          const civicoInput =
-            box.querySelector("#numeroCivico") || box.querySelector('input[name="numeroCivico"]');
-
-          if (!numeroCavitaAvvistate && cavitaVal === "Si" && cavitaNumInput?.value) {
-            numeroCavitaAvvistate = cavitaNumInput.value.trim();
-          }
-          if (!numeroCivico && cavitaVal === "Si" && civicoInput?.value) {
-            numeroCivico = civicoInput.value.trim();
-          }
-
-          if (
-            nomeSpecie ||
-            numeroSpecie ||
-            sessoSpecie ||
-            atlanteUccelli.length ||
-            note ||
-            cavitaVal
-          ) {
-            speciesArray.push({
+      
+      const speciesArray = (() => {
+        const container = document.getElementById("speciesFieldsContainer");
+        if (!container) return [];
+        const boxes = Array.from(container.querySelectorAll(".species-box"));
+        return boxes
+          .map((box) => {
+            const nomeSpecie = (box.querySelector('input[name="q110_nomeSpecie"]')?.value || "").trim();
+            const numeroSpecie = box.querySelector('select[name="q23_numeroIndividui"]')?.value || "";
+            const sessoSpecie = box.querySelector('select[name="q360_sessoSpecie"]')?.value || "";
+            const codiciStr = box.querySelector(".codici-atlante-value")?.value || "";
+            const atlanteUccelli = codiciStr
+              ? codiciStr.split(",").map((c) => c.trim()).filter(Boolean)
+              : [];
+            const cavita = (box.querySelector('input[name="cavita[]"]:checked') || {}).value || "";
+            const numeroCavita = box.querySelector('input[name="numeroCavita"]')?.value || "";
+            const numeroCivico = box.querySelector('input[name="numeroCivico"]')?.value || "";
+            const note = box.querySelector(".codici-atlante-note-value")?.value || "";
+            if (
+              !nomeSpecie &&
+              !numeroSpecie &&
+              !sessoSpecie &&
+              !atlanteUccelli.length &&
+              !cavita &&
+              !numeroCavita &&
+              !numeroCivico &&
+              !note
+            ) {
+              return null;
+            }
+            return {
               nomeSpecie,
               numeroSpecie,
               sessoSpecie,
               atlanteUccelli,
-              cavita: cavitaVal,
+              cavita,
+              numeroCavitaAvvistate: numeroCavita,
+              numeroCivico,
               note,
-            });
-          }
-        });
+            };
+          })
+          .filter(Boolean)
+          .slice(0, 10);
+      })();
 
-        return { speciesArray, numeroCavitaAvvistate, numeroCivico };
-      }
-
-      const { speciesArray, numeroCavitaAvvistate, numeroCivico } = buildSpeciesArray();
+      const ambiente = (() => {
+        const checks = Array.from(
+          document.querySelectorAll('input[name="q25_ambienteCircostante[]"]:checked')
+        );
+        return checks.map((c) => c.value);
+      })();
 
       const payload = {
-        nome,
-        cognome,
-        ente,
-        email,
-        dataavvistamento,
-        ambientecircostante,
-        ulterioriosservazioni,
-        mappa,
-        consenso: consensoChecked.value,
-        numeroCavitaAvvistate,
-        numeroCivico,
+        formID: "253234849989376",
+        email: emailInput.value,
+        tipo:
+          (form.querySelector('input[name="q30_scriviUna[]"]:checked') || {}).value || "",
+        dataAvvistamento: document.getElementById("dataAvvistamento")?.value || "",
+        nome: document.getElementById("nomeRilevatore")?.value || "",
+        ente: document.getElementById("enteTitolo")?.value || "",
+        ambiente,
+        // Riepilogo testuale di tutte le specie (utile in e-mail / Excel)
+        specie: (() => {
+          if (!speciesArray.length) return "";
+          return speciesArray
+            .map((sp, index) => {
+              const parts = [];
+              if (sp.nomeSpecie) parts.push(`Specie: ${sp.nomeSpecie}`);
+              if (sp.numeroSpecie) parts.push(`Numero individui: ${sp.numeroSpecie}`);
+              if (sp.sessoSpecie) parts.push(`Sesso: ${sp.sessoSpecie}`);
+              if (sp.atlanteUccelli && sp.atlanteUccelli.length) {
+                parts.push(`Codici Atlante: ${sp.atlanteUccelli.join(", ")}`);
+              }
+              if (sp.cavita) parts.push(`Cavità: ${sp.cavita}`);
+              if (sp.numeroCavitaAvvistate) {
+                parts.push(`Numero cavità: ${sp.numeroCavitaAvvistate}`);
+              }
+              if (sp.numeroCivico) parts.push(`Civico: ${sp.numeroCivico}`);
+              if (sp.note) parts.push(`Note: ${sp.note}`);
+              return `${index + 1}) ${parts.join(" | ")}`;
+            })
+            .join("\n");
+        })(),
         speciesArray,
-        fileUrl: ""
+        ulterioriOsservazioni:
+          document.getElementById("ulterioriOsservazioni")?.value || "",
+        consenso: consensoChecked.value,
+        geoloc: document.getElementById("jotformGeoloc")?.value || "",
+        fileBase64: base64,
+        fileName: firstFile.name,
+        fileType: firstFile.type || "image/jpeg",
       };
-
       const res = await fetch("/.netlify/functions/submit-jotform", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1898,22 +1888,18 @@ document.addEventListener("DOMContentLoaded", () => {
       if (res.ok) {
         alert("Dati inviati correttamente a Jotform.");
         form.reset();
-
         const previewBox = document.getElementById("imagePreviewBox");
         const previewContainer = document.getElementById("previewContainer");
         if (previewBox) previewBox.style.display = "none";
         if (previewContainer) previewContainer.innerHTML = "";
 
-        const birdnetBox = document.getElementById("birdnetBox");
-        if (birdnetBox) birdnetBox.style.display = "none";
-
+        // Torna automaticamente all'inizio del modulo farfalle
         const rect = form.getBoundingClientRect();
-        const scrollTop =
-          window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
+        const scrollTop = window.scrollY || window.pageYOffset || document.documentElement.scrollTop || 0;
         const targetY = rect.top + scrollTop;
         window.scrollTo({ top: targetY, behavior: "smooth" });
       } else {
-        console.error("Errore Jotform / Netlify:", text);
+        console.error("Errore Jotform:", text);
         alert("Errore nell'invio a Jotform:\n" + text);
       }
     } catch (err) {
@@ -1927,8 +1913,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
-
-
 function removeSpecies(btn) {
   const box = btn.closest('.species-box');
   const container = document.getElementById('speciesFieldsContainer');
